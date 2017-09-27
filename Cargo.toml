@@ -1,0 +1,9 @@
+[package]
+name = "rust"
+version = "0.1.0"
+authors = ["tiberiodarferreira"]
+
+[dependencies]
+telegram-bot = "0.5"
+futures = "0.1.14"
+tokio-core = "0.1"
