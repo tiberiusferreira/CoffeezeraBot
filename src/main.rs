@@ -1,14 +1,12 @@
 extern crate telegram_bot;
 extern crate tokio_core;
 extern crate futures;
-use std::time::Instant;
 use std::thread;
-use std::sync::Arc;
-use std::sync::RwLock;
 use telegram_bot::*;
 use std::thread::sleep;
-use std::sync::RwLockWriteGuard;
 use std::time::{Duration, SystemTime};
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
 extern crate time;
 
 
@@ -16,10 +14,20 @@ struct CoffeezeraUser {
     name: String,
     id: i64,
     time_left: f64,
-    chat_id: i64
+    chat_id: i64,
 }
 
 impl CoffeezeraUser {
+
+    fn default() -> CoffeezeraUser {
+        CoffeezeraUser {
+            name: "".to_string(),
+            id: -1,
+            time_left: 0.0,
+            chat_id: 0,
+        }
+    }
+
     fn set_user<'a>(&mut self, id: i64, name: &'a str, chat_id: i64) {
         self.id = id;
         self.name = name.to_string();
@@ -27,7 +35,7 @@ impl CoffeezeraUser {
         self.chat_id = chat_id;
     }
 
-    fn clear_user<'a>(&mut self) {
+    fn clear_user(&mut self) {
         self.id = -1;
         self.name = "".to_string();
         self.time_left = 0.0;
@@ -36,66 +44,6 @@ impl CoffeezeraUser {
 }
 
 
-//
-//fn handle_text_msg<'a>(api: &Api, msg: &'a Message, current_user: Arc<RwLock<CoffeezeraUser>>) {
-//    const NEW_USER_MSG: &'static str = "Todo uso da máquina será creditado a sua conta durante os \
-//                         próximos 5 minutos ou até você clicar o botão Desligar abaixo.";
-//    const YOU_ARE_ALREADY_USING_MSG: &'static str = "A máquina já está em uso por você, ";
-//    const TURN_ON_COMMAND: &'static str = "Ligar";
-//    const TURN_OFF_COMMAND: &'static str = "Desligar";
-//    const WRONG_MSG_TYPE_ERROR: &'static str = "Got message which was not text";
-//    let text_msg: &str = match msg.msg {
-//        MessageType::Text(ref text) => text.as_str(),
-//        _ => {
-//            println!("{}", WRONG_MSG_TYPE_ERROR);
-//            return;
-//        }
-//    };
-//    match current_user.write() {
-//        Ok(mut user) => {
-//            if text_msg == TURN_ON_COMMAND && user.id == -1 {
-//                send_msg(&api,
-//                         msg.chat.id(),
-//                         &NEW_USER_MSG,
-//                         vec![vec!["Desligar".to_string()]]);
-//                println!("{} {}", user.id, msg.from.id);
-//                set_user(msg.from.id, &msg.from.first_name.as_str(), msg.chat.id(), &mut user);
-//                println!("Current user name = {}", user.name);
-//                println!("User name = {}", msg.from.first_name.as_str());
-//            } else if text_msg == TURN_ON_COMMAND && user.id == msg.from.id {
-//                println!("{} {}", user.id, msg.from.id);
-//                send_msg(&api,
-//                         msg.chat.id(),
-//                         &format!("{}{}", &YOU_ARE_ALREADY_USING_MSG, user.name),
-//                         vec![vec!["Desligar".to_string()]]
-//                );
-//            } else if text_msg == TURN_ON_COMMAND && user.id != msg.from.id {
-//                send_msg(&api,
-//                         msg.chat.id(),
-//                         &format!("A máquina já está em uso por {}. Por favor, aguarde.", user.name),
-//                         vec![vec![TURN_ON_COMMAND.to_string()]]
-//                );
-//            } else if text_msg == TURN_OFF_COMMAND && user.id == msg.from.id {
-//                clear_user(&mut user);
-//                send_msg(&api,
-//                         msg.chat.id(),
-//                         &format!("A máquina foi desligada e seus créditos não serão mais gastos"),
-//                         vec![vec![TURN_ON_COMMAND.to_string()]]
-//                );
-//            } else {
-//                send_msg(&api,
-//                         msg.chat.id(),
-//                         &format!("Tente \"{}\" como comando.", TURN_ON_COMMAND),
-//                         vec![vec![TURN_ON_COMMAND.to_string()]]
-//                );
-//            }
-//        },
-//        Err(e) => {
-//            println!("Failed to get a lock: {}", e);
-//        }
-//
-//    }
-//}
 
 struct CoffeezeraBot {
     api: Api,
@@ -112,7 +60,7 @@ impl CoffeezeraBot {
 
 
     fn send_msg(&self, chat_id: i64, message: &str,keyboard_options: Vec<Vec<String>>){
-        self.api.send_message(
+        match self.api.send_message(
             chat_id,
             message.to_string(),
             None,
@@ -126,7 +74,12 @@ impl CoffeezeraBot {
             }
             )
             )
-        );
+        ){
+            Err(e) => {
+                println!("Error sending message {:?}", e);
+            },
+            Ok(_) => ()
+        }
     }
 
     fn is_older_than(message: &Message, seconds: i64) -> bool{
@@ -193,38 +146,53 @@ impl CoffeezeraBot {
     }
 
     pub fn start(&mut self){
-        let mut updates_listener = self.api.listener(ListeningMethod::LongPoll(None));
-        updates_listener.listen(|u| {
-            let actual_message = u.message.unwrap();
-            if CoffeezeraBot::is_older_than(&actual_message, 10) {
-                return Ok(ListeningAction::Continue)
+        let (tx, rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+        let thread_tx = tx.clone();
+        let thread_api = self.api.clone();
+        thread::spawn(move || {
+            let mut updates_listener = thread_api.listener(ListeningMethod::LongPoll(None));
+            match updates_listener.listen(|u| {
+                let actual_message = u.message.unwrap();
+                if CoffeezeraBot::is_older_than(&actual_message, 30) {
+                    return Ok(ListeningAction::Continue)
+                }
+                if !CoffeezeraBot::is_text_msg(&actual_message) {
+                    return Ok(ListeningAction::Continue)
+                }
+                match thread_tx.send(actual_message) {
+                    Err(e) => println!("{}", e),
+                    Ok(_) => ()
+                }
+                Ok(ListeningAction::Continue)
+            }) {
+                Err(why) => println!("Error: {}", why),
+                Ok(_) => ()
             }
-            if !CoffeezeraBot::is_text_msg(&actual_message) {
-                return Ok(ListeningAction::Continue)
-            }
-            self.handle_msg(&actual_message);
-            Ok(ListeningAction::Continue)
         });
-    }
-
-
-}
-
-impl Default for CoffeezeraUser {
-    fn default() -> CoffeezeraUser {
-        CoffeezeraUser {
-            name: "".to_string(),
-            id: -1,
-            time_left: 0.0,
-            chat_id: 0
+        let now = SystemTime::now();
+        loop {
+            match rx.try_recv() {
+                Ok(message) => self.handle_msg(&message),
+                _ => ()
+            }
+            let time_passed_ms: f64 = now.elapsed().unwrap().subsec_nanos() as f64/1000000000.0;
+            if !self.current_user.id != -1 {
+                if (self.current_user.time_left-time_passed_ms) > 0.0 {
+                    self.current_user.time_left = self.current_user.time_left-time_passed_ms;
+                }else {
+                    self.current_user.time_left = 0.0;
+                    self.current_user.clear_user();
+                }
+            }
+            sleep(Duration::from_millis(500));
         }
     }
 }
 
 
 fn main() {
-    let mut coffezera = CoffeezeraBot::new();
-    coffezera.start();
+    let mut coffeezera = CoffeezeraBot::new();
+    coffeezera.start();
 }
 
 
