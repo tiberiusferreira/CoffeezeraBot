@@ -1,0 +1,1 @@
+DROP TABLE coffeezera_users;
