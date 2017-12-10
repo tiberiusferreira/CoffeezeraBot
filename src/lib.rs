@@ -1,4 +1,4 @@
-#[macro_use] extern crate diesel_codegen;
+#[macro_use] extern crate diesel_infer_schema;
 pub mod schema;
 pub mod models;
 
@@ -36,7 +36,9 @@ pub fn create_user<'a>(conn: &PgConnection, name: &'a str, telegram_id: i64, acc
         account_balance,
     };
 
-    diesel::insert(&new_user).into(coffeezera_users::table).get_result(conn).expect("Error")
+    diesel::insert(&new_user)
+        .into(coffeezera_users::table)
+        .get_result(conn).expect(format!("Error creating user {:?}", new_user.name).as_str())
 }
 
 pub fn update_user<'a>(conn: &PgConnection, user_id: i32, input_account_balance: f64) {

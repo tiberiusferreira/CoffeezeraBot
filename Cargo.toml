@@ -4,11 +4,20 @@ version = "0.1.0"
 authors = ["tiberiodarferreira"]
 
 [dependencies]
-telegram-bot = "0.5"
-futures = "0.1.14"
+futures = "0.1"
 tokio-core = "0.1"
 time = "0.1.38"
+reqwest = { version = "*"}
 
-diesel = { version = "0.16.0", features = ["postgres"] }
-diesel_codegen = { version = "0.16.0", features = ["postgres"] }
-dotenv = "0.9.0"
+threadpool = "1.7.1"
+
+diesel = { version = "0.99.0", features = ["postgres"] }
+diesel_infer_schema = { version = "0.99.0", features = ["postgres"] }
+dotenv = "0.10"
+erased-serde = "0.3.3"
+flexi_logger = "*"
+log = "*"
+[dependencies.teleborg]
+path = "../teleborg"
+#git = "https://github.com/tiberiusferreira/teleborg.git"
+#branch = "fix_getting_updates"

@@ -1,0 +1,254 @@
+{
+    "ok": true,
+    "result": [
+        {
+            "update_id": 412682989,
+            "message": {
+                "message_id": 10659,
+                "from": {
+                    "id": 85105858,
+                    "is_bot": false,
+                    "first_name": "Vitor RC",
+                    "username": "Vitor_RC",
+                    "language_code": "pt-BR"
+                },
+                "chat": {
+                    "id": -1001077335238,
+                    "title": "Veganismo deboista",
+                    "type": "supergroup"
+                },
+                "date": 1510671177,
+                "new_chat_photo": [
+                    {
+                        "file_id": "AgADAQADe64xG8KcEgV7mYwXR-N_AZAe9y8ABGB9_4t6NQlsVgoBAAEC",
+                        "file_size": 10027,
+                        "width": 160,
+                        "height": 160
+                    },
+                    {
+                        "file_id": "AgADAQADe64xG8KcEgV7mYwXR-N_AZAe9y8ABJP9RpO2xB0TVwoBAAEC",
+                        "file_size": 30289,
+                        "width": 320,
+                        "height": 320
+                    },
+                    {
+                        "file_id": "AgADAQADe64xG8KcEgV7mYwXR-N_AZAe9y8ABN4eyJ8nJYX2WAoBAAEC",
+                        "file_size": 57436,
+                        "width": 640,
+                        "height": 640
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682990,
+            "message": {
+                "message_id": 1187,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "pt-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510675439,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682991,
+            "message": {
+                "message_id": 1188,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "en-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510679214,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682992,
+            "message": {
+                "message_id": 1189,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "en-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510679843,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682993,
+            "message": {
+                "message_id": 1190,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "en-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510680934,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682994,
+            "message": {
+                "message_id": 1191,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "en-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510681091,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682995,
+            "message": {
+                "message_id": 1192,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "en-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510681106,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        },
+        {
+            "update_id": 412682996,
+            "message": {
+                "message_id": 1193,
+                "from": {
+                    "id": 75698394,
+                    "is_bot": false,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "language_code": "en-BR"
+                },
+                "chat": {
+                    "id": 75698394,
+                    "first_name": "Tiberio",
+                    "last_name": "Ferreira",
+                    "username": "TiberioFerreira",
+                    "type": "private"
+                },
+                "date": 1510681151,
+                "text": "/unicamp",
+                "entities": [
+                    {
+                        "offset": 0,
+                        "length": 8,
+                        "type": "bot_command"
+                    }
+                ]
+            }
+        }
+    ]
+}

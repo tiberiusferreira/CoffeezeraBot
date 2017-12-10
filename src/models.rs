@@ -1,4 +1,4 @@
-#[derive(Queryable)]
+#[derive(Queryable, Clone)]
 pub struct CoffeezeraUser {
     pub id: i32,
     pub name: String,
