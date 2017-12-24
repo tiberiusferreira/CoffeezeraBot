@@ -8,9 +8,9 @@ use super::coffeezerabot::models::CoffeezeraUser;
 use super::telegram_interface::TelegramInterface;
 use self::teleborg::objects::{Update, Message, CallBackQuery};
 use super::current_user_context::CurrentUserContext;
-pub struct TelegramHandler<T: TelegramInterface>{
-    telegram_interface: T,
-    database_connection: PgConnection,
+pub struct TelegramHandler<T>{
+    pub telegram_interface: T,
+    pub database_connection: PgConnection,
     you_are_already_using: &'static str,
     you_are_not_registered_plus_id: &'static str,
     turn_on_command: &'static str,
@@ -46,44 +46,24 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         error!("This was neither a Message or Callback update. Weird.");
     }
 
-    fn usr_id_is_in_database(&self, user_telegram_id: i64) -> bool{
-        return !get_user(&self.database_connection, user_telegram_id).is_err();
-    }
-
-    fn msg_has_text_and_sender(&self, message: &Message) -> bool{
-        let msg_text = match message.text.as_ref() {
-            Some(text) => text,
-            None => {
-                error!("Got no text in message");
-                return false;
-            },
-        };
-
-        let from_user = match message.from.as_ref() {
-            Some(user) => user,
-            None => {
-                error!("Message had no sender (no from!) !");
-                return false;
-            }
-        };
-        return true;
-    }
 
     fn handle_msg(&mut self, message: Message, context: &Option<CurrentUserContext>){
 
-        if !self.msg_has_text_and_sender(&message) {
-            return;
-        }
+        let sender_telegram_id = match message.from.as_ref() {
+            Some(user) => user.id,
+            None => {
+                error!("Message had no sender (no from!) !");
+                return;
+            }
+        };
 
-        let msg_text = message.text.unwrap();
-        let sender_id = message.from.unwrap().id;
         let chat_id = message.chat.id;
 
-        if let Ok(db_user) = get_user(&self.database_connection, sender_id){
-            self.reply_to_msg(db_user, msg_text.as_str(), chat_id, context);
+        if let Ok(sender_db_info) = get_user(&self.database_connection, sender_telegram_id){
+            self.reply_to_db_user_msg(sender_db_info, chat_id, context);
         }else{
             self.telegram_interface.send_msg(message.chat.id,
-                                             format!("{} {}" , self.you_are_not_registered_plus_id, sender_id).as_str(),
+                                             format!("{} {}" , self.you_are_not_registered_plus_id, sender_telegram_id).as_str(),
                                              None);
             return;
         }
@@ -103,9 +83,9 @@ impl <T: TelegramInterface> TelegramHandler<T> {
                                          None);
     }
 
-    fn user_has_credits(&self, user_id: i64) -> bool{
-        if let Ok(user) = get_user(&self.database_connection, user_id){
-            if user.account_balance > 1.0{
+    fn user_has_credits(&self, user_telegram_id: i64) -> bool{
+        if let Ok(user) = get_user(&self.database_connection, user_telegram_id){
+            if user.account_balance > 0.0{
                 return true;
             }
         }
@@ -118,6 +98,14 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         self.telegram_interface.send_msg(chat_id,
                                          &status,
                                          Some(vec![vec![self.turn_on_command.to_string()]]));
+    }
+
+    fn reply_with_user_credits(&self, db_user: CoffeezeraUser, chat_id: i64) {
+        info!("Returning user credits");
+        let status = format!("Créditos: {:.2} segundos", db_user.account_balance);
+        self.telegram_interface.send_msg(chat_id,
+                                         &status,
+                                         None);
     }
 
     fn reply_with_user_credits_and_off_option_and_time_left(&self, db_user: &CoffeezeraUser, time_left: f64, chat_id: i64) {
@@ -165,18 +153,20 @@ impl <T: TelegramInterface> TelegramHandler<T> {
 
 
 
-    fn reply_to_msg(&self, db_user: CoffeezeraUser, msg_txt: &str, chat_id: i64, context: &Option<CurrentUserContext>){
+    fn reply_to_db_user_msg(&self, sender_db_info: CoffeezeraUser, chat_id: i64, context: &Option<CurrentUserContext>){
         if let &Some(ref context) = context{
             info!("There was already an user using the grinder.");
-            if db_user.telegram_id == context.current_user.telegram_id{
+            if sender_db_info.telegram_id == context.current_user.telegram_id{
                 info!("It was the sender!");
                 self.reply_with_user_credits_and_off_option_and_time_left(&context.current_user,context.get_time_left_turn_off(),chat_id);
             }else {
                 info!("It was NOT the sender!");
                 self.send_already_in_use_reply(chat_id, &context);
             }
+        }else if sender_db_info.account_balance > 0.0 {
+            self.reply_with_user_credits_and_on_option(sender_db_info, chat_id);
         }else {
-            self.reply_with_user_credits_and_on_option(db_user, chat_id);
+            self.reply_with_user_credits(sender_db_info, chat_id);
         }
     }
 
@@ -184,13 +174,11 @@ impl <T: TelegramInterface> TelegramHandler<T> {
     fn is_turn_on_command(&self, command: &str) -> bool{
         return command.eq(self.turn_on_command);
     }
+
     fn is_turn_off_command(&self, command: &str) -> bool{
         return command.eq(self.turn_off_command);
     }
 
-    fn grinder_is_already_in_use(&self, context: &Option<CurrentUserContext>) -> bool{
-        return context.is_some();
-    }
 
     fn handle_turn_on_command(&self, context: &mut Option<CurrentUserContext>, message: &Message, sender_telegram_id: i64){
         if let &mut Some(ref some_context) = context {
@@ -208,6 +196,11 @@ impl <T: TelegramInterface> TelegramHandler<T> {
             if let Ok(user) = get_user(&self.database_connection, sender_telegram_id){
                 info!("Turn on command and grinder available and user is in DB");
                 self.turn_on_grinder(context, user.clone(), message.chat.id, message.message_id);
+                if !self.user_has_credits(sender_telegram_id){
+                    info!("User has no credits!");
+                    self.reply_with_user_credits(user, message.chat.id);
+                    return;
+                }
                 match context {
                     &mut Some(ref some_context) => {
                         self.update_msg_with_user_credits_and_off_option_and_time_left(&some_context.current_user,
@@ -284,8 +277,10 @@ impl <T: TelegramInterface> TelegramHandler<T> {
 
         if self.is_turn_on_command(data.as_str()) {
             self.handle_turn_on_command(context, message, callback_query.from.id);
-        }else {
+        }else if self.is_turn_off_command(data.as_str()) {
             self.handle_turn_off_command(context, message, callback_query.from.id);
+        }else{
+            error!("Got a callback that was neither a turn-on or turn-off: {}", data.as_str());
         }
     }
 

@@ -1,5 +1,4 @@
 extern crate time;
-use self::time::Duration;
 use super::coffeezerabot::models::CoffeezeraUser;
 
 pub struct CurrentUserContext {
@@ -33,11 +32,7 @@ impl CurrentUserContext {
         }
     }
 
-    pub fn get_time_last_update(&self) -> time::Tm{
-        self.last_update_time
-    }
-
-    pub fn get_time_left_turn_off(&self) -> f64{
+    pub fn get_time_left_turn_off(&self) -> f64 {
         self.time_left_auto_turn_off
     }
 
@@ -46,7 +41,7 @@ impl CurrentUserContext {
             current_user: db_user,
             current_user_chat_id: chat_id,
             current_user_message_id: message_id,
-            time_left_auto_turn_off: 10.0,
+            time_left_auto_turn_off: 60.0,
             last_update_time: time::now()
         }
     }

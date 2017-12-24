@@ -1,5 +1,5 @@
 mod coffeezera;
-use coffeezera::telegram_impl::TelegramInterfaceImpl;
+use coffeezera::telegram_adaptor::TelegramInterfaceImpl;
 use coffeezera::CoffeezeraBot;
 extern crate reqwest;
 #[macro_use]

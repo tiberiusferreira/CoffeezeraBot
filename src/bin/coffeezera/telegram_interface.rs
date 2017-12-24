@@ -1,10 +1,9 @@
 extern crate teleborg;
-use self::teleborg::error::Error;
-use self::teleborg::objects::{Message, Update};
+use self::teleborg::objects::{Update};
 use std::sync::mpsc::Receiver;
 pub trait TelegramInterface {
     fn new() -> Self;
-    fn start_getting_updates(&self);
+    fn start_getting_updates(&mut self);
     fn get_updates_channel(&self) -> &Receiver<Vec<Update>>;
     fn send_msg(&self,
                 chat_id: i64,
