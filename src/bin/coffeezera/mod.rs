@@ -1,13 +1,13 @@
 extern crate coffeezerabot;
+extern crate teleborg;
 use self::coffeezerabot::*;
-pub mod telegram_adaptor;
 mod current_user_context;
-mod telegram_handler;
-mod telegram_interface;
+mod telegram_replier;
 use std::{thread, time};
-use self::telegram_handler::TelegramHandler;
-use self::telegram_interface::TelegramInterface;
+use self::telegram_replier::TelegramHandler;
+use self::teleborg::TelegramInterface;
 use self::current_user_context::CurrentUserContext;
+use std::env;
 
 pub struct CoffeezeraBot <T: TelegramInterface>{
     telegram_handler: TelegramHandler<T>,
@@ -17,6 +17,11 @@ pub struct CoffeezeraBot <T: TelegramInterface>{
 impl <T: TelegramInterface> CoffeezeraBot<T>{
     pub fn new() -> CoffeezeraBot<T>{
         info!("Creating new CoffeezeraBot");
+        let bot_token = env::var("TELEGRAM_BOT_TOKEN")
+            .ok()
+            .expect("Can't find TELEGRAM_BOT_TOKEN env variable")
+            .parse::<String>()
+            .unwrap();
         CoffeezeraBot{
             telegram_handler: TelegramHandler::new(),
             context: None
