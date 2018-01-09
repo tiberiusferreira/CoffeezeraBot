@@ -6,17 +6,30 @@ pub struct CurrentUserContext {
     pub current_user_chat_id: i64,
     pub current_user_message_id: i64,
     time_left_auto_turn_off: f64,
-    last_update_time: time::Tm
+    last_update_time: time::Tm,
+    pub last_db_sync_time: time::Tm
 }
 
 impl CurrentUserContext {
 
-    fn delta_time_ms(&self) -> f64{
+    pub fn needs_to_sync_to_db(&self) -> bool{
+        if self.delta_time_s_since_last_db_sync() >= 0.2 {
+            return true;
+        }else {
+            return false;
+        }
+    }
+
+    fn delta_time_s_since_last_update(&self) -> f64{
         ((time::now() - self.last_update_time).num_milliseconds() as f64) / 1000.0
     }
 
-    pub fn tick(&mut self){
-        let delta = self.delta_time_ms();
+    pub fn delta_time_s_since_last_db_sync(&self) -> f64{
+        ((time::now() - self.last_db_sync_time).num_milliseconds() as f64) / 1000.0
+    }
+
+    pub fn tick(&mut self, is_grinding: bool){
+        let delta = self.delta_time_s_since_last_update();
         info!("Delta since last update = {}", delta);
         self.last_update_time = time::now();
         if self.time_left_auto_turn_off - delta > 0.0{
@@ -24,11 +37,12 @@ impl CurrentUserContext {
         }else{
             self.time_left_auto_turn_off = 0.0;
         }
-
-        if self.current_user.account_balance - delta > 0.0{
-            self.current_user.account_balance = self.current_user.account_balance - delta;
-        }else{
-            self.current_user.account_balance = 0.0;
+        if is_grinding{
+            if self.current_user.account_balance - delta > 0.0{
+                self.current_user.account_balance = self.current_user.account_balance - delta;
+            }else{
+                self.current_user.account_balance = 0.0;
+            }
         }
     }
 
@@ -42,7 +56,8 @@ impl CurrentUserContext {
             current_user_chat_id: chat_id,
             current_user_message_id: message_id,
             time_left_auto_turn_off: 60.0,
-            last_update_time: time::now()
+            last_update_time: time::now(),
+            last_db_sync_time: time::now()
         }
     }
 }

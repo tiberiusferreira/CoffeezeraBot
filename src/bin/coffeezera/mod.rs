@@ -3,28 +3,27 @@ extern crate teleborg;
 use self::coffeezerabot::*;
 mod current_user_context;
 mod telegram_replier;
-use std::{thread, time};
+mod grinder;
+use std::{thread};
 use self::telegram_replier::TelegramHandler;
 use self::teleborg::TelegramInterface;
 use self::current_user_context::CurrentUserContext;
 use std::env;
-
+use std;
+extern crate time;
 pub struct CoffeezeraBot <T: TelegramInterface>{
     telegram_handler: TelegramHandler<T>,
-    context: Option<CurrentUserContext>
+    context: Option<CurrentUserContext>,
+    grinder: grinder::Grinder,
 }
 
 impl <T: TelegramInterface> CoffeezeraBot<T>{
     pub fn new() -> CoffeezeraBot<T>{
         info!("Creating new CoffeezeraBot");
-        let bot_token = env::var("TELEGRAM_BOT_TOKEN")
-            .ok()
-            .expect("Can't find TELEGRAM_BOT_TOKEN env variable")
-            .parse::<String>()
-            .unwrap();
         CoffeezeraBot{
             telegram_handler: TelegramHandler::new(),
-            context: None
+            context: None,
+            grinder: grinder::Grinder::new(),
         }
     }
 
@@ -39,7 +38,7 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
 
     fn update_context_times(&mut self){
         if let Some(ref mut some_context) = self.context {
-            some_context.tick();
+            some_context.tick(self.grinder.is_grinding());
         }
     }
 
@@ -50,11 +49,22 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         }
     }
 
-    fn update_database_with_current_context(&self){
-        if let Some(ref context) = self.context {
-            update_user(&self.telegram_handler.database_connection,
-                        context.current_user.id,
-                        context.current_user.account_balance);
+    fn update_grinder_state(&self){
+        if self.context.is_some(){
+            self.grinder.turn_on();
+        }else {
+            self.grinder.turn_off();
+        }
+    }
+
+    fn update_database_with_current_context_if_needed(&mut self){
+        if let Some(ref mut context) = self.context {
+            if context.needs_to_sync_to_db(){
+                update_user(&self.telegram_handler.database_connection,
+                            context.current_user.id,
+                            context.current_user.account_balance);
+                context.last_db_sync_time = time::now();
+            }
         }
     }
     pub fn start(&mut self){
@@ -66,9 +76,14 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
                 }
             }
             self.update_context_times();
-            self.update_database_with_current_context();
+            self.update_database_with_current_context_if_needed();
             self.remove_user_if_appropriate();
-            thread::sleep(time::Duration::from_millis(100));
+            self.update_grinder_state();
+            if self.context.is_none(){
+                thread::sleep(std::time::Duration::from_millis(500));
+            }else {
+                thread::sleep(std::time::Duration::from_millis(20));
+            }
         }
     }
 }

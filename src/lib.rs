@@ -26,7 +26,7 @@ use self::models::{CoffeezeraUser, NewUser};
 
 
 
-pub fn create_user<'a>(conn: &PgConnection, name: &'a str, telegram_id: i64, account_balance: f64) -> CoffeezeraUser {
+pub fn create_user<'a>(conn: &PgConnection, name: &'a str, telegram_id: i64, account_balance: f64){
     use schema::coffeezera_users;
 
 
@@ -36,9 +36,13 @@ pub fn create_user<'a>(conn: &PgConnection, name: &'a str, telegram_id: i64, acc
         account_balance,
     };
 
-    diesel::insert(&new_user)
-        .into(coffeezera_users::table)
-        .get_result(conn).expect(format!("Error creating user {:?}", new_user.name).as_str())
+    diesel::insert_into(coffeezera_users::table)
+        .values(&new_user)
+        .execute(conn)
+        .expect(format!("Error creating user {:?}", new_user.name).as_str());
+//    diesel::insert(&new_user)
+//        .into(coffeezera_users::table)
+//        .get_result(conn).expect(format!("Error creating user {:?}", new_user.name).as_str())
 }
 
 pub fn update_user<'a>(conn: &PgConnection, user_id: i32, input_account_balance: f64) {

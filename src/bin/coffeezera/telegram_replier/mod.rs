@@ -13,15 +13,14 @@ use super::current_user_context::CurrentUserContext;
 pub struct TelegramHandler<T> where T: TelegramInterface{
     pub telegram_interface: T,
     pub database_connection: PgConnection,
-    you_are_already_using: &'static str,
     you_are_not_registered_plus_id: &'static str,
     turn_on_command: &'static str,
     turn_off_command: &'static str,
-    no_credits: &'static str
 }
 
 pub struct RequestResponse {
     reply: String,
+    markup: Option<Vec<Vec<String>>>,
     action: GrinderAction
 }
 
@@ -42,11 +41,9 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         TelegramHandler {
             telegram_interface: T::new(bot_token).unwrap(),
             database_connection: establish_connection(),
-            you_are_already_using: "A máquina já está em uso por você.",
             you_are_not_registered_plus_id: "Você não está registrado para uso do moedor. Peça para o Tibério registrar seu id: ",
             turn_on_command: "Ligar",
             turn_off_command: "Desligar",
-            no_credits: "Sua conta não tem créditos o suficiente."
         }
     }
 
@@ -67,30 +64,17 @@ impl <T: TelegramInterface> TelegramHandler<T> {
 
 
     fn handle_msg(&mut self, message: Message, context: &Option<CurrentUserContext>){
-        let sender_telegram_id = match message.from.as_ref() {
-            Some(user) => user.id,
-            None => {
-                error!("Message had no sender (no from!) !");
-                return;
-            }
-        };
+        let sender_db_info = message.from.as_ref().and_then(|user| {
+            get_user(&self.database_connection, user.id).ok()
+        });
         let chat_id = message.chat.id;
-//        let sender_db_info = get_user(&self.database_connection, sender_telegram_id).ok();
-//        let response = MessageHandler::new(message, context, sender_db_info);
-//        let response = response.get_response();
-//        let message = OutgoingMessage::new(chat_id, &response.reply);
-//        self.telegram_interface.send_msg(message);
-        if let Ok(sender_db_data) = get_user(&self.database_connection, sender_telegram_id){
-            self.reply_to_db_user_msg(sender_db_data, chat_id, context);
-        }else{
-            let text = self.make_not_registered_msg(sender_telegram_id);
-            let message = OutgoingMessage::new(message.chat.id, &text);
-            self.telegram_interface.send_msg(message);
-        }
-    }
-
-    fn make_not_registered_msg(&self, sender_telegram_id: i64) -> String{
-        format!("{} {}" , self.you_are_not_registered_plus_id, sender_telegram_id)
+        let response = MessageHandler::new(message, context, sender_db_info);
+        let response = response.get_response();
+        let mut message = OutgoingMessage::new(chat_id, &response.reply);
+        if let Some(markup) = response.markup {
+            message.with_reply_markup(markup);
+        };
+        self.telegram_interface.send_msg(message);
     }
 
     fn make_already_in_use_msg(&self, context: &CurrentUserContext) -> String{
@@ -99,13 +83,6 @@ impl <T: TelegramInterface> TelegramHandler<T> {
                 context.get_time_left_turn_off())
     }
 
-
-    fn send_already_in_use_reply(&self, chat_id: i64, context: &CurrentUserContext){
-        info!("Returning already in use msg.");
-        let status = self.make_already_in_use_msg(context);
-        let message = OutgoingMessage::new(chat_id, &status);
-        self.telegram_interface.send_msg(message);
-    }
 
     fn user_has_credits(&self, user_telegram_id: i64) -> bool{
         if let Ok(user) = get_user(&self.database_connection, user_telegram_id){
@@ -116,13 +93,6 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         return false;
     }
 
-    fn reply_with_user_credits_and_on_option(&self, db_user: CoffeezeraUser, chat_id: i64) {
-        info!("Returning user credits and turn on msg");
-        let status = format!("Créditos: {:.2} segundos", db_user.account_balance);
-        let message = OutgoingMessage::new(chat_id, &status)
-            .with_reply_markup(vec![vec![self.turn_on_command.to_string()]]);
-        self.telegram_interface.send_msg(message);
-    }
 
     fn reply_with_not_enough_credits(&self, db_user: CoffeezeraUser, chat_id: i64) {
         info!("Returning not enough credits");
@@ -131,35 +101,28 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         self.telegram_interface.send_msg(message);
     }
 
-    fn reply_with_user_credits_off_option_and_time_left(&self, db_user: &CoffeezeraUser, time_left: f64, chat_id: i64) {
-        info!("Returning user credits and turn off msg");
-        let status = format!("Créditos: {:.2} segundos. Auto desligar: {}", db_user.account_balance, time_left as i64);
-        let message = OutgoingMessage::new(chat_id, &status)
-            .with_reply_markup(vec![vec![self.turn_off_command.to_string()]]);
-        self.telegram_interface.send_msg(message);
-    }
 
     fn update_msg_with_user_credits_and_on_option(&self, db_user: &CoffeezeraUser, chat_id: i64, msg_id: i64) {
         info!("Updating msg with user credits and turn on msg");
         let status = format!("Créditos: {:.2} segundos", db_user.account_balance);
-        let edit = OutgoingEdit::new(chat_id, msg_id, &status)
-            .with_reply_markup(vec![vec![self.turn_on_command.to_string()]]);
+        let mut edit = OutgoingEdit::new(chat_id, msg_id, &status);
+        edit.with_reply_markup(vec![vec![self.turn_on_command.to_string()]]);
         self.telegram_interface.edit_message_text(edit);
     }
 
     fn update_msg_with_user_credits_and_off_option_and_time_left(&self, db_user: &CoffeezeraUser, time_left: f64, chat_id: i64, msg_id: i64) {
         info!("Updating msg with user credits and turn off msg");
         let status = format!("Créditos: {:.2} segundos. Auto desligar: {}", db_user.account_balance, time_left as i64);
-        let edit = OutgoingEdit::new(chat_id, msg_id, &status)
-            .with_reply_markup(vec![vec![self.turn_off_command.to_string()]]);
+        let mut edit = OutgoingEdit::new(chat_id, msg_id, &status);
+        edit.with_reply_markup(vec![vec![self.turn_off_command.to_string()]]);
         self.telegram_interface.edit_message_text(edit);
     }
 
     fn update_msg_with_already_in_use_and_on_option(&self, context: &CurrentUserContext, chat_id: i64, msg_id: i64) {
         info!("Sending already in use message update and ON option");
         let status = self.make_already_in_use_msg(context);
-        let edit = OutgoingEdit::new(chat_id, msg_id, &status)
-            .with_reply_markup(vec![vec![self.turn_on_command.to_string()]]);
+        let mut edit = OutgoingEdit::new(chat_id, msg_id, &status);
+        edit.with_reply_markup(vec![vec![self.turn_on_command.to_string()]]);
         self.telegram_interface.edit_message_text(edit);
     }
 
@@ -173,22 +136,6 @@ impl <T: TelegramInterface> TelegramHandler<T> {
 
 
 
-    fn reply_to_db_user_msg(&self, sender_db_info: CoffeezeraUser, chat_id: i64, context: &Option<CurrentUserContext>){
-        if let &Some(ref context) = context{
-            info!("There was already an user using the grinder.");
-            if sender_db_info.telegram_id == context.current_user.telegram_id{
-                info!("It was the sender!");
-                self.reply_with_user_credits_off_option_and_time_left(&context.current_user, context.get_time_left_turn_off(), chat_id);
-            }else {
-                info!("It was NOT the sender!");
-                self.send_already_in_use_reply(chat_id, &context);
-            }
-        }else if sender_db_info.account_balance > 0.0 {
-            self.reply_with_user_credits_and_on_option(sender_db_info, chat_id);
-        }else {
-            self.reply_with_not_enough_credits(sender_db_info, chat_id);
-        }
-    }
 
 
     fn is_turn_on_command(&self, command: &str) -> bool{
