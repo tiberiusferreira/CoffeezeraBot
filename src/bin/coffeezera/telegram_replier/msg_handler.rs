@@ -1,7 +1,9 @@
 extern crate teleborg;
 
 use self::teleborg::{Message, User};
-use super::{CurrentUserContext, CoffeezeraUser, RequestResponse, GrinderAction};
+use super::{CurrentUserContext, CoffeezeraUser};
+use coffeezera::telegram_replier::response::Response;
+use super::grinder_action::GrinderAction;
 const TURN_OFF: &'static str  = "Desligar";
 const TURN_ON: &'static str  = "Ligar";
 pub struct MessageHandler<'a>{
@@ -20,67 +22,68 @@ impl<'a> MessageHandler <'a>{
         }
     }
 
-    fn make_not_registered_response(user: &Option<User>) -> RequestResponse{
+    fn make_not_registered_response(user: &Option<User>) -> Response {
         match user {
             &Some(ref user) => {
-                RequestResponse {
+                Response {
                     reply: format!("Você não está registrado ainda, envie essa mensagem para o @TiberioFerreira com o seu ID: {}", user.id),
                     action: GrinderAction::DoNothing,
-                    markup: None,
+                    reply_markup: None,
                 }
             },
             &None => {
-                RequestResponse {
+                Response {
                     reply: format!("Essa mensagem não continha remetente. Envie isso para @TiberioFerreira"),
                     action: GrinderAction::DoNothing,
-                    markup: None,
+                    reply_markup: None,
                 }
             }
         }
     }
 
-    fn make_you_are_already_using_response() -> RequestResponse{
-        RequestResponse{
-            reply: format!("Você já está usando o moedor."),
+    fn make_you_are_already_using_response(context: &CurrentUserContext) -> Response {
+        Response {
+            reply: format!("Você já está usando o moedor. Créditos: {:.2} segundos",
+                           context.current_user.account_balance),
             action: GrinderAction::DoNothing,
-            markup: Some(vec![vec![TURN_OFF.to_string()]])
+            reply_markup: Some(vec![vec![TURN_OFF.to_string()]])
         }
     }
 
-    fn make_someone_is_already_using_response(context: &CurrentUserContext) -> RequestResponse{
-        RequestResponse{
+    fn make_someone_is_already_using_response(context: &CurrentUserContext) -> Response {
+        Response {
             reply: format!("{} já está usando o moedor.", context.current_user.name),
             action: GrinderAction::DoNothing,
-            markup: None
+            reply_markup: None
         }
     }
 
-    fn make_default_response(sender_db_info: &CoffeezeraUser) -> RequestResponse{
+    fn make_default_response(sender_db_info: &CoffeezeraUser) -> Response {
         let credits = sender_db_info.account_balance;
-        RequestResponse{
+        Response {
             reply: format!("Créditos: {:.2} segundos", credits),
             action: GrinderAction::DoNothing,
-            markup: Some(vec![vec![TURN_ON.to_string()]])
+            reply_markup: Some(vec![vec![TURN_ON.to_string()]])
         }
     }
 
-    fn make_no_credits_response(sender_db_info: &CoffeezeraUser) -> RequestResponse{
+    fn make_no_credits_response(sender_db_info: &CoffeezeraUser) -> Response {
         let credits = sender_db_info.account_balance;
-        RequestResponse{
+        Response {
             reply: format!("Você está sem créditos: {:.2} segundos, fale com @TiberioFerreira para adicionar mais.", credits),
             action: GrinderAction::DoNothing,
-            markup: None
+            reply_markup: None
         }
     }
 
 
-    fn make_reply_to_db_user_msg(&self, sender_db_info: &CoffeezeraUser) -> RequestResponse{
+    fn make_reply_to_db_user_msg(&self, sender_db_info: &CoffeezeraUser) -> Response {
         let context = self.context;
         if let &Some(ref context) = context{
             info!("There was already an user using the grinder.");
             if sender_db_info.telegram_id == context.current_user.telegram_id{
                 info!("It was the sender!");
-                return MessageHandler::make_you_are_already_using_response()
+                return MessageHandler::make_you_are_already_using_response(context);
             }else {
                 info!("It was NOT the sender!");
                 return MessageHandler::make_someone_is_already_using_response(context);
@@ -92,7 +95,7 @@ impl<'a> MessageHandler <'a>{
         }
     }
 
-    pub fn get_response(&self) -> RequestResponse{
+    pub fn get_request_response(&self) -> Response {
         match &self.sender_db_info {
             &None => {
                 return MessageHandler::make_not_registered_response(&self.message.from);

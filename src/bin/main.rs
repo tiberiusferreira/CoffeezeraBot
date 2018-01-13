@@ -14,6 +14,7 @@ fn main() {
     Logger::with_str("info")
         .format(opt_format)
         .log_to_file()
+        .directory("/home/pi/Coffeezera/logs")
         .start()
         .unwrap_or_else(|e| panic!("Logger initialization failed with {}", e));
     log_panics::init();

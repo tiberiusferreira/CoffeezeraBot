@@ -18,5 +18,4 @@ migrations
 .idea/
 CoffeezeraBot.iml
 *.log
-migrations/.gitkeep
-migrations/00000000000000_diesel_initial_setup/
+coffeezera_manager.sh

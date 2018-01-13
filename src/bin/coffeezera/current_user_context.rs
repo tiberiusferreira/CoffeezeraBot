@@ -30,7 +30,6 @@ impl CurrentUserContext {
 
     pub fn tick(&mut self, is_grinding: bool){
         let delta = self.delta_time_s_since_last_update();
-        info!("Delta since last update = {}", delta);
         self.last_update_time = time::now();
         if self.time_left_auto_turn_off - delta > 0.0{
             self.time_left_auto_turn_off = self.time_left_auto_turn_off - delta;
@@ -38,6 +37,7 @@ impl CurrentUserContext {
             self.time_left_auto_turn_off = 0.0;
         }
         if is_grinding{
+            self.time_left_auto_turn_off = 305.0;
             if self.current_user.account_balance - delta > 0.0{
                 self.current_user.account_balance = self.current_user.account_balance - delta;
             }else{
@@ -55,7 +55,7 @@ impl CurrentUserContext {
             current_user: db_user,
             current_user_chat_id: chat_id,
             current_user_message_id: message_id,
-            time_left_auto_turn_off: 60.0,
+            time_left_auto_turn_off: 305.0,
             last_update_time: time::now(),
             last_db_sync_time: time::now()
         }
