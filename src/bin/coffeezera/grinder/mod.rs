@@ -4,7 +4,6 @@ const RELAY_PIN_NUMBER: u64 = 26;
 const SHUNT_PIN_NUMBER: u64 = 21;
 use std::thread::sleep;
 use std::time::Duration;
-
 pub struct Grinder {
     relay: Pin,
     shunt: Pin
@@ -25,6 +24,7 @@ impl Grinder {
             shunt
         }
     }
+
     pub fn turn_on(&self){
         self.relay.set_value(1).expect(&format!("Could not set RELAY_PIN_NUMBER {} to 1", RELAY_PIN_NUMBER));
     }

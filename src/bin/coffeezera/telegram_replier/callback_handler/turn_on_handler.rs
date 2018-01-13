@@ -1,4 +1,3 @@
-extern crate coffeezerabot;
 use super::*;
 
 impl<'a> CallbackHandler<'a> {
@@ -28,7 +27,7 @@ impl<'a> CallbackHandler<'a> {
         }
     }
 
-    fn get_response_for_not_registered_user(&self) -> Response {
+    pub fn get_response_for_not_registered_user(&self) -> Response {
         info!("Updating msg with not registered msg");
         let reply_text = format!("Você não está registrado para usar o moedor. Envie essa mensagem para @TiberioFerreira com o seu ID: {}", self.callback.from.id);
         Response {

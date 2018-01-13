@@ -8,6 +8,7 @@ mod msg_handler;
 mod callback_handler;
 mod response;
 mod grinder_action;
+use self::grinder_action::GrinderAction;
 use self::msg_handler::MessageHandler;
 use super::{get_user};
 use super::coffeezerabot::models::CoffeezeraUser;
@@ -64,9 +65,40 @@ impl <T: TelegramInterface> TelegramHandler<T> {
 
 
     fn handle_callback(&mut self, callback_query: CallBackQuery, context: &mut Option<CurrentUserContext>){
+        let original_message = match callback_query.message {
+            Some(ref original_message) => {
+                original_message
+            },
+            None => {
+                error!("Did not have a message attached to Callback query");
+                return;
+            }
+        };
+        let chat_id = original_message.chat.id;
+        let message_id = original_message.message_id;
+
         let sender_db_info =
             get_user(&self.database_connection, callback_query.from.id).ok();
-        callback_handler::CallbackHandler::new(callback_query, context, sender_db_info);
+
+        let response = callback_handler::CallbackHandler::new(callback_query.clone(), context, sender_db_info.clone())
+            .handle_callback();
+        match response.action {
+            GrinderAction::DoNothing => {},
+            GrinderAction::TurnOn => {
+                if let Some(sender_db_info) = sender_db_info{
+                    self.turn_on_grinder(context, sender_db_info, chat_id, message_id);
+                }else{
+                    error!("Tried to allow non-registered user to access the grinder!!")
+                }
+            },
+            GrinderAction::TurnOff => self.turn_off_grinder(context),
+        }
+        let mut message = OutgoingEdit::new(chat_id, message_id,&response.reply);
+        if let Some(markup) = response.reply_markup {
+            message.with_reply_markup(markup);
+        };
+        self.telegram_interface.edit_message_text(message);
+
     }
 
     fn turn_off_grinder(&self, context: &mut Option<CurrentUserContext>){

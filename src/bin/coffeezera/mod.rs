@@ -8,9 +8,9 @@ use std::{thread};
 use self::telegram_replier::TelegramHandler;
 use self::teleborg::TelegramInterface;
 use self::current_user_context::CurrentUserContext;
-use std::env;
 use std;
 extern crate time;
+
 pub struct CoffeezeraBot <T: TelegramInterface>{
     telegram_handler: TelegramHandler<T>,
     context: Option<CurrentUserContext>,
@@ -25,6 +25,10 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
             context: None,
             grinder: grinder::Grinder::new(),
         }
+    }
+
+    pub fn emergency_turn_off(){
+        grinder::Grinder::new().turn_off();
     }
 
     fn should_remove_user(&mut self) -> bool{
