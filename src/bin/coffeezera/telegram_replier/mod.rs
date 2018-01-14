@@ -102,7 +102,9 @@ impl <T: TelegramInterface> TelegramHandler<T> {
     }
 
     fn turn_off_grinder(&self, context: &mut Option<CurrentUserContext>){
-        context.take();
+        if let &mut Some(ref mut actual_context) = context{
+                actual_context.should_be_removed = true;
+        };
     }
     fn turn_on_grinder(&self, context: &mut Option<CurrentUserContext>, new_user: CoffeezeraUser, user_chat_id: i64, user_message_id: i64){
         *context = Some(CurrentUserContext::new(new_user, user_chat_id, user_message_id));

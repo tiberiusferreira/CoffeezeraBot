@@ -7,13 +7,14 @@ pub struct CurrentUserContext {
     pub current_user_message_id: i64,
     time_left_auto_turn_off: f64,
     last_update_time: time::Tm,
-    pub last_db_sync_time: time::Tm
+    pub last_db_sync_time: time::Tm,
+    pub should_be_removed: bool,
 }
 
 impl CurrentUserContext {
 
     pub fn needs_to_sync_to_db(&self) -> bool{
-        if self.delta_time_s_since_last_db_sync() >= 0.3 {
+        if self.delta_time_s_since_last_db_sync() >= 1.0 {
             return true;
         }else {
             return false;
@@ -57,7 +58,8 @@ impl CurrentUserContext {
             current_user_message_id: message_id,
             time_left_auto_turn_off: 305.0,
             last_update_time: time::now(),
-            last_db_sync_time: time::now()
+            last_db_sync_time: time::now(),
+            should_be_removed: false
         }
     }
 }

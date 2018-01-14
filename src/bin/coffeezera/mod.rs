@@ -34,7 +34,7 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
     fn should_remove_user(&mut self) -> bool{
         match self.context {
             Some(ref context) => {
-                return context.get_time_left_turn_off() == 0.0 || context.current_user.account_balance == 0.0
+                return context.should_be_removed || context.get_time_left_turn_off() == 0.0 || context.current_user.account_balance == 0.0
             },
             None => false
         }
@@ -62,7 +62,7 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         }
     }
 
-    fn sync_to_db(&mut self){
+    pub fn sync_to_db(&mut self){
         if let Some(ref mut context) = self.context {
             let beginning = time::now();
             update_user(&self.telegram_handler.database_connection,
@@ -100,6 +100,8 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
             self.update_grinder_state();
             if self.context.is_none(){
                 thread::sleep(std::time::Duration::from_millis(500));
+            }else {
+                thread::sleep(std::time::Duration::from_millis(30));
             }
         }
     }
