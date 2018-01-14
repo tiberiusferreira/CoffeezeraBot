@@ -46,8 +46,9 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         }
     }
 
-    fn remove_user_if_appropriate(&mut self){
+    fn remove_user_if_appropriate_and_sync_to_db(&mut self){
         if self.should_remove_user(){
+            self.sync_to_db();
             info!("Removing user!");
             self.context.take();
         }
@@ -61,16 +62,30 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         }
     }
 
-    fn update_database_with_current_context_if_needed(&mut self){
+    fn sync_to_db(&mut self){
         if let Some(ref mut context) = self.context {
-            if context.needs_to_sync_to_db(){
-                update_user(&self.telegram_handler.database_connection,
-                            context.current_user.id,
-                            context.current_user.account_balance);
-                context.last_db_sync_time = time::now();
-            }
+            let beginning = time::now();
+            update_user(&self.telegram_handler.database_connection,
+                        context.current_user.id,
+                        context.current_user.account_balance);
+            context.last_db_sync_time = time::now();
+            info!("Synced to DB, took {} ms", (time::now() - beginning).num_milliseconds());
+        }else {
+            error!("Tried to sync to DB without context!");
         }
     }
+
+    fn update_database_with_current_context_if_needed(&mut self){
+        let mut needs_to_sync = false;
+        if let Some(ref mut context) = self.context {
+            needs_to_sync = context.needs_to_sync_to_db();
+        }
+        if needs_to_sync {
+            self.sync_to_db();
+        }
+    }
+
+
     pub fn start(&mut self){
         self.telegram_handler.telegram_interface.start_getting_updates();
         loop{
@@ -81,12 +96,10 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
             }
             self.update_context_times();
             self.update_database_with_current_context_if_needed();
-            self.remove_user_if_appropriate();
+            self.remove_user_if_appropriate_and_sync_to_db();
             self.update_grinder_state();
             if self.context.is_none(){
                 thread::sleep(std::time::Duration::from_millis(500));
-            }else {
-                thread::sleep(std::time::Duration::from_millis(20));
             }
         }
     }

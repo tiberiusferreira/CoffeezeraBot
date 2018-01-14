@@ -1,7 +1,6 @@
 use super::*;
 
 impl<'a> CallbackHandler<'a> {
-
     pub fn handle_turn_on_command(&self) -> Response {
         if let &Some(ref some_context) = self.context {
             info!("Turn on command with grinder in use");
@@ -69,7 +68,7 @@ impl<'a> CallbackHandler<'a> {
     }
 
     fn make_already_in_use_msg(&self, context: &CurrentUserContext) -> String{
-        format!("O moedor já está em uso por {}. Por favor, espere ele desligar o moedor ou ser removido automaticamente em: {} segundos",
+        format!("O moedor já está em uso por {}. Por favor, espere ele desligar o moedor ou ser removido automaticamente em: {:.2} segundos",
                 context.current_user.name,
                 context.get_time_left_turn_off())
     }

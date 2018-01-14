@@ -51,8 +51,11 @@ impl<'a> MessageHandler <'a>{
     }
 
     fn make_someone_is_already_using_response(context: &CurrentUserContext) -> Response {
+        let reply_text = format!("O moedor já está em uso por {}. Por favor, espere ele desligar o moedor ou ser removido automaticamente em: {:.2} segundos",
+                context.current_user.name,
+                context.get_time_left_turn_off());
         Response {
-            reply: format!("{} já está usando o moedor.", context.current_user.name),
+            reply: reply_text,
             action: GrinderAction::DoNothing,
             reply_markup: None
         }

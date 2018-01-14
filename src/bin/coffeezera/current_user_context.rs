@@ -13,7 +13,7 @@ pub struct CurrentUserContext {
 impl CurrentUserContext {
 
     pub fn needs_to_sync_to_db(&self) -> bool{
-        if self.delta_time_s_since_last_db_sync() >= 0.2 {
+        if self.delta_time_s_since_last_db_sync() >= 0.3 {
             return true;
         }else {
             return false;
