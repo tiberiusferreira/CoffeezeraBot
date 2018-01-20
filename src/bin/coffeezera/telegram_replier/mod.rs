@@ -1,6 +1,5 @@
 extern crate diesel;
 extern crate teleborg;
-extern crate time;
 use std::env;
 use self::diesel::{PgConnection};
 use super::establish_connection;

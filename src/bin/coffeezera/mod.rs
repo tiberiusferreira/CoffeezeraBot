@@ -9,7 +9,7 @@ use self::telegram_replier::TelegramHandler;
 use self::teleborg::TelegramInterface;
 use self::current_user_context::CurrentUserContext;
 use std;
-extern crate time;
+use std::time;
 
 pub struct CoffeezeraBot <T: TelegramInterface>{
     telegram_handler: TelegramHandler<T>,
@@ -64,12 +64,12 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
 
     pub fn sync_to_db(&mut self){
         if let Some(ref mut context) = self.context {
-            let beginning = time::now();
+            let beginning = time::Instant::now();
             update_user(&self.telegram_handler.database_connection,
                         context.current_user.id,
                         context.current_user.account_balance);
-            context.last_db_sync_time = time::now();
-            info!("Synced to DB, took {} ms", (time::now() - beginning).num_milliseconds());
+            context.last_db_sync_time = time::Instant::now();
+            info!("Synced to DB, took {} ms", CurrentUserContext::seconds_as_f64_from_instants(beginning, time::Instant::now())*1000.0);
         }else {
             error!("Tried to sync to DB without context!");
         }
@@ -101,7 +101,7 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
             if self.context.is_none(){
                 thread::sleep(std::time::Duration::from_millis(500));
             }else {
-                thread::sleep(std::time::Duration::from_millis(30));
+                thread::sleep(std::time::Duration::from_millis(1));
             }
         }
     }

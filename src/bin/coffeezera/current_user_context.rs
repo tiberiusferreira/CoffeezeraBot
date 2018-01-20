@@ -1,37 +1,52 @@
-extern crate time;
 use super::coffeezerabot::models::CoffeezeraUser;
-
+use std::time;
 pub struct CurrentUserContext {
     pub current_user: CoffeezeraUser,
     pub current_user_chat_id: i64,
     pub current_user_message_id: i64,
     time_left_auto_turn_off: f64,
-    last_update_time: time::Tm,
-    pub last_db_sync_time: time::Tm,
+    last_update_time: time::Instant,
+    pub last_db_sync_time: time::Instant,
     pub should_be_removed: bool,
 }
 
 impl CurrentUserContext {
 
     pub fn needs_to_sync_to_db(&self) -> bool{
-        if self.delta_time_s_since_last_db_sync() >= 1.0 {
+        if self.delta_time_s_since_last_db_sync() >= 0.7 {
             return true;
         }else {
             return false;
         }
     }
 
+    pub fn seconds_as_f64_from_instants(earlier : time::Instant, later: time::Instant) -> f64{
+        let whole_seconds = later.duration_since(earlier).as_secs() as f64;
+        let sub_seconds = later
+            .duration_since(earlier)
+            .subsec_nanos() as f64 / 1000_000_000.0;
+        whole_seconds+sub_seconds
+    }
+
+    pub fn elapse_as_f64_seconds(earlier : time::Instant) -> f64{
+        let whole_seconds = earlier.elapsed().as_secs() as f64;
+        let sub_seconds = earlier.elapsed()
+            .subsec_nanos() as f64 / 1000_000_000.0;
+        whole_seconds+sub_seconds
+    }
+
     fn delta_time_s_since_last_update(&self) -> f64{
-        ((time::now() - self.last_update_time).num_milliseconds() as f64) / 1000.0
+        CurrentUserContext::elapse_as_f64_seconds(self.last_update_time)
     }
 
     pub fn delta_time_s_since_last_db_sync(&self) -> f64{
-        ((time::now() - self.last_db_sync_time).num_milliseconds() as f64) / 1000.0
+        CurrentUserContext::elapse_as_f64_seconds(self.last_db_sync_time)
+
     }
 
     pub fn tick(&mut self, is_grinding: bool){
         let delta = self.delta_time_s_since_last_update();
-        self.last_update_time = time::now();
+        self.last_update_time = time::Instant::now();
         if self.time_left_auto_turn_off - delta > 0.0{
             self.time_left_auto_turn_off = self.time_left_auto_turn_off - delta;
         }else{
@@ -57,8 +72,8 @@ impl CurrentUserContext {
             current_user_chat_id: chat_id,
             current_user_message_id: message_id,
             time_left_auto_turn_off: 305.0,
-            last_update_time: time::now(),
-            last_db_sync_time: time::now(),
+            last_update_time: time::Instant::now(),
+            last_db_sync_time: time::Instant::now(),
             should_be_removed: false
         }
     }
