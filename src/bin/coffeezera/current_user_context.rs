@@ -20,14 +20,6 @@ impl CurrentUserContext {
         }
     }
 
-    pub fn seconds_as_f64_from_instants(earlier : time::Instant, later: time::Instant) -> f64{
-        let whole_seconds = later.duration_since(earlier).as_secs() as f64;
-        let sub_seconds = later
-            .duration_since(earlier)
-            .subsec_nanos() as f64 / 1000_000_000.0;
-        whole_seconds+sub_seconds
-    }
-
     pub fn elapse_as_f64_seconds(earlier : time::Instant) -> f64{
         let whole_seconds = earlier.elapsed().as_secs() as f64;
         let sub_seconds = earlier.elapsed()

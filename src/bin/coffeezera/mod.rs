@@ -69,7 +69,9 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
                         context.current_user.id,
                         context.current_user.account_balance);
             context.last_db_sync_time = time::Instant::now();
-            info!("Synced to DB, took {} ms", CurrentUserContext::seconds_as_f64_from_instants(beginning, time::Instant::now())*1000.0);
+            if CurrentUserContext::elapse_as_f64_seconds(beginning)*1000.0 > 20.0{
+                warn!("Synced to DB, took {} ms", CurrentUserContext::elapse_as_f64_seconds(beginning)*1000.0);
+            }
         }else {
             error!("Tried to sync to DB without context!");
         }
