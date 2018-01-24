@@ -1,5 +1,6 @@
 use super::coffeezerabot::models::CoffeezeraUser;
 use std::time;
+const AUTO_TURNOFF_TIME: f64 = 30.0;
 pub struct CurrentUserContext {
     pub current_user: CoffeezeraUser,
     pub current_user_chat_id: i64,
@@ -45,7 +46,7 @@ impl CurrentUserContext {
             self.time_left_auto_turn_off = 0.0;
         }
         if is_grinding{
-            self.time_left_auto_turn_off = 305.0;
+            self.time_left_auto_turn_off = AUTO_TURNOFF_TIME;
             if self.current_user.account_balance - delta > 0.0{
                 self.current_user.account_balance = self.current_user.account_balance - delta;
             }else{
@@ -63,7 +64,7 @@ impl CurrentUserContext {
             current_user: db_user,
             current_user_chat_id: chat_id,
             current_user_message_id: message_id,
-            time_left_auto_turn_off: 305.0,
+            time_left_auto_turn_off: AUTO_TURNOFF_TIME,
             last_update_time: time::Instant::now(),
             last_db_sync_time: time::Instant::now(),
             should_be_removed: false
