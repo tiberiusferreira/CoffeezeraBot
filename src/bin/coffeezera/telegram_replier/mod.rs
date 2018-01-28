@@ -33,7 +33,7 @@ impl <T: TelegramInterface> TelegramHandler<T> {
     }
 
 
-    pub fn handle_update(&mut self, update: Update, context: &mut Option<CurrentUserContext>){
+    pub fn handle_update(&self, update: Update, context: &mut Option<CurrentUserContext>){
         if let Some(message) = update.message {
             info!("This was a message update");
             self.handle_msg(message, context);
@@ -48,7 +48,7 @@ impl <T: TelegramInterface> TelegramHandler<T> {
     }
 
 
-    fn handle_msg(&mut self, message: Message, context: &Option<CurrentUserContext>){
+    fn handle_msg(&self, message: Message, context: &Option<CurrentUserContext>){
         let sender_db_info = message.from.as_ref().and_then(|user| {
             get_user(&self.database_connection, user.id).ok()
         });
@@ -63,7 +63,17 @@ impl <T: TelegramInterface> TelegramHandler<T> {
     }
 
 
-    fn handle_callback(&mut self, callback_query: CallBackQuery, context: &mut Option<CurrentUserContext>){
+
+    pub fn send_auto_turned_off_message(&self, context: &CurrentUserContext){
+        let response = callback_handler::CallbackHandler::get_response_for_auto_turn_off(context);
+        let mut message = OutgoingEdit::new(context.current_user_chat_id, context.current_user_message_id,&response.reply);
+        if let Some(markup) = response.reply_markup {
+            message.with_reply_markup(markup);
+        };
+        self.telegram_interface.edit_message_text(message);
+    }
+
+    fn handle_callback(&self, callback_query: CallBackQuery, context: &mut Option<CurrentUserContext>){
         let original_message = match callback_query.message {
             Some(ref original_message) => {
                 original_message

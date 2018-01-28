@@ -36,6 +36,15 @@ impl<'a> CallbackHandler<'a> {
         }
     }
 
+    pub fn get_response_for_auto_turn_off(context: &CurrentUserContext) -> Response{
+        let reply_text = format!("O moedor foi desligado automaticamente. Bom café! Você ainda tem: {:.2} segundos", context.current_user.account_balance);
+        Response {
+            reply: reply_text,
+            reply_markup: Some(vec![vec![TURN_ON.to_string()]]),
+            action: GrinderAction::DoNothing,
+        }
+    }
+
     fn get_response_for_turn_off_by_not_current_user_but_a_registered_one(&self, context: &CurrentUserContext, sender_db_info: &CoffeezeraUser) -> Response{
         let reply_text = format!("O moedor está em uso por {}. Só ele pode desliga-lo :(. Você pode tentar liga-lo depois usando seus créditos: {:.2} segundos",
                                  context.current_user.name, sender_db_info.account_balance);
