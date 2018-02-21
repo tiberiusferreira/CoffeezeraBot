@@ -10,7 +10,7 @@ use self::teleborg::TelegramInterface;
 use self::current_user_context::CurrentUserContext;
 use std;
 use std::time;
-
+static IS_OPEN: bool = false;
 pub struct CoffeezeraBot <T: TelegramInterface>{
     telegram_handler: TelegramHandler<T>,
     context: Option<CurrentUserContext>,
@@ -34,7 +34,8 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
     fn should_remove_user(&mut self) -> bool{
         match self.context {
             Some(ref context) => {
-                return context.should_be_removed || context.get_time_left_turn_off() == 0.0 || context.current_user.account_balance == 0.0
+                return context.should_be_removed || context.get_time_left_turn_off() == 0.0 ||
+                    (context.current_user.account_balance == 0.0 && !IS_OPEN)
             },
             None => false
         }

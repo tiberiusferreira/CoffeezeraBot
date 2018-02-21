@@ -53,8 +53,8 @@ impl <T: TelegramInterface> TelegramHandler<T> {
             get_user(&self.database_connection, user.id).ok()
         });
         let chat_id = message.chat.id;
-        let response = MessageHandler::new(message, context, sender_db_info);
-        let response = response.get_request_response();
+        let message_handler = MessageHandler::new(message, context, sender_db_info);
+        let response = message_handler.get_request_response();
         let mut message = OutgoingMessage::new(chat_id, &response.reply);
         if let Some(markup) = response.reply_markup {
             message.with_reply_markup(markup);

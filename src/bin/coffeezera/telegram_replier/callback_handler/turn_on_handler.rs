@@ -1,5 +1,5 @@
 use super::*;
-
+use coffeezera::IS_OPEN;
 impl<'a> CallbackHandler<'a> {
     pub fn handle_turn_on_command(&self) -> Response {
         if let &Some(ref some_context) = self.context {
@@ -15,7 +15,7 @@ impl<'a> CallbackHandler<'a> {
             info!("Turn on command and grinder available");
             if let Some(ref user_db_info) = self.sender_db_info {
                 info!("Turn on command and grinder available and user is in DB");
-                if !self.user_has_credits(&user_db_info) {
+                if !self.user_has_credits(&user_db_info) && !IS_OPEN {
                     info!("User has no credits!");
                     return self.get_response_for_turn_on_no_credits(&user_db_info);
                 }
@@ -39,7 +39,12 @@ impl<'a> CallbackHandler<'a> {
 
     fn get_response_for_turn_on_with_credits_while_available(&self, sender_db_info: &CoffeezeraUser) -> Response {
         info!("Updating msg with user credits and turn off msg and turning on grinder");
-        let reply_text = format!("Créditos: {:.2} segundos", sender_db_info.account_balance);
+        let reply_text;
+        if IS_OPEN {
+            reply_text = format!("O moedor está OPEN e você ainda tem {:.2} segundos de crédito para usar depois.", sender_db_info.account_balance);
+        }else {
+            reply_text = format!("Créditos: {:.2} segundos", sender_db_info.account_balance);
+        }
         Response {
             reply: reply_text,
             reply_markup: Some(vec![vec![TURN_OFF.to_string()]]),
@@ -59,7 +64,12 @@ impl<'a> CallbackHandler<'a> {
 
     fn get_response_for_turn_on_by_current_user(&self, context: &CurrentUserContext) -> Response {
         info!("Updating msg with user credits and turn off msg");
-        let reply_text = format!("Créditos: {:.2} segundos", context.current_user.account_balance);
+        let reply_text;
+        if IS_OPEN{
+            reply_text = format!("O moedor está OPEN e você ainda tem {:.2} segundos de crédito para usar depois.", context.current_user.account_balance);
+        }else {
+            reply_text = format!("Créditos: {:.2} segundos", context.current_user.account_balance);
+        }
         Response {
             reply: reply_text,
             reply_markup: Some(vec![vec![TURN_OFF.to_string()]]),

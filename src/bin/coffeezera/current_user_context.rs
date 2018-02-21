@@ -1,17 +1,23 @@
 use super::coffeezerabot::models::CoffeezeraUser;
 use std::time;
 const AUTO_TURNOFF_TIME: f64 = 30.0;
+use coffeezera::IS_OPEN;
 pub struct CurrentUserContext {
     pub current_user: CoffeezeraUser,
     pub current_user_chat_id: i64,
     pub current_user_message_id: i64,
     time_left_auto_turn_off: f64,
+    time_of_context_creation: time::Instant,
     last_update_time: time::Instant,
     pub last_db_sync_time: time::Instant,
     pub should_be_removed: bool,
 }
 
 impl CurrentUserContext {
+
+    pub fn get_time_since_context_creation_as_sec(&self) -> u64{
+        return self.time_of_context_creation.elapsed().as_secs();
+    }
 
     pub fn needs_to_sync_to_db(&self) -> bool{
         if self.delta_time_s_since_last_db_sync() >= 0.7 {
@@ -47,10 +53,12 @@ impl CurrentUserContext {
         }
         if is_grinding{
             self.time_left_auto_turn_off = AUTO_TURNOFF_TIME;
-            if self.current_user.account_balance - delta > 0.0{
-                self.current_user.account_balance = self.current_user.account_balance - delta;
-            }else{
-                self.current_user.account_balance = 0.0;
+            if !IS_OPEN {
+                if self.current_user.account_balance - delta > 0.0 {
+                    self.current_user.account_balance = self.current_user.account_balance - delta;
+                } else {
+                    self.current_user.account_balance = 0.0;
+                }
             }
         }
     }
@@ -65,6 +73,7 @@ impl CurrentUserContext {
             current_user_chat_id: chat_id,
             current_user_message_id: message_id,
             time_left_auto_turn_off: AUTO_TURNOFF_TIME,
+            time_of_context_creation: time::Instant::now(),
             last_update_time: time::Instant::now(),
             last_db_sync_time: time::Instant::now(),
             should_be_removed: false

@@ -6,6 +6,7 @@ use coffeezera::telegram_replier::response::Response;
 use super::grinder_action::GrinderAction;
 const TURN_OFF: &'static str  = "Desligar";
 const TURN_ON: &'static str  = "Ligar";
+use coffeezera::IS_OPEN;
 pub struct MessageHandler<'a>{
     message: Message,
     context: &'a Option<CurrentUserContext>,
@@ -42,18 +43,27 @@ impl<'a> MessageHandler <'a>{
     }
 
     fn make_you_are_already_using_response(context: &CurrentUserContext) -> Response {
-        Response {
-            reply: format!("Você já está usando o moedor. Créditos: {:.2} segundos",
-                           context.current_user.account_balance),
-            action: GrinderAction::DoNothing,
-            reply_markup: Some(vec![vec![TURN_OFF.to_string()]])
+        if IS_OPEN{
+            Response {
+                reply: format!("Você já está usando o moedor. Ele está OPEN e você ainda tem {:.2} segundos de crédito.",
+                               context.current_user.account_balance),
+                action: GrinderAction::DoNothing,
+                reply_markup: Some(vec![vec![TURN_OFF.to_string()]])
+            }
+        }else {
+            Response {
+                reply: format!("Você já está usando o moedor. Créditos: {:.2} segundos",
+                               context.current_user.account_balance),
+                action: GrinderAction::DoNothing,
+                reply_markup: Some(vec![vec![TURN_OFF.to_string()]])
+            }
         }
     }
 
     fn make_someone_is_already_using_response(context: &CurrentUserContext) -> Response {
         let reply_text = format!("O moedor já está em uso por {}. Por favor, espere ele desligar o moedor ou ser removido automaticamente em: {:.2} segundos",
-                context.current_user.name,
-                context.get_time_left_turn_off());
+                                 context.current_user.name,
+                                 context.get_time_left_turn_off());
         Response {
             reply: reply_text,
             action: GrinderAction::DoNothing,
@@ -63,8 +73,14 @@ impl<'a> MessageHandler <'a>{
 
     fn make_default_response(sender_db_info: &CoffeezeraUser) -> Response {
         let credits = sender_db_info.account_balance;
+        let reply_text;
+        if IS_OPEN{
+            reply_text = format!("O moedor está OPEN e você ainda tem {:.2} segundos de crédito para usar depois.", credits);
+        }else {
+            reply_text = format!("Créditos: {:.2} segundos", credits);
+        }
         Response {
-            reply: format!("Créditos: {:.2} segundos", credits),
+            reply: reply_text,
             action: GrinderAction::DoNothing,
             reply_markup: Some(vec![vec![TURN_ON.to_string()]])
         }
@@ -91,7 +107,7 @@ impl<'a> MessageHandler <'a>{
                 info!("It was NOT the sender!");
                 return MessageHandler::make_someone_is_already_using_response(context);
             }
-        }else if sender_db_info.account_balance > 0.0 {
+        }else if sender_db_info.account_balance > 0.0 || IS_OPEN{
             return MessageHandler::make_default_response(sender_db_info);
         }else {
             return MessageHandler::make_no_credits_response(sender_db_info);
