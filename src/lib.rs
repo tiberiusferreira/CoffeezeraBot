@@ -23,12 +23,30 @@ pub fn establish_connection() -> PgConnection {
 
 use self::models::{CoffeezeraUser, NewUser};
 
-pub fn update_user<'a>(conn: &PgConnection, user_id: i32, input_account_balance: f64) {
+pub fn update_user_balance<'a>(conn: &PgConnection, user_id: i32, input_account_balance: f64) {
     use self::schema::coffeezera_users::dsl::{coffeezera_users, account_balance};
 
     diesel::update(coffeezera_users.find(user_id)).set(account_balance.eq(input_account_balance))
         .get_result::<CoffeezeraUser>(conn)
         .expect(&format!("Could not find user with id {}", user_id));
+}
+
+pub fn update_user_picpay<'a>(conn: &PgConnection, user_id: i32, new_picpay_username: Option<String>) {
+    use self::schema::coffeezera_users::dsl::{coffeezera_users, picpay_username};
+
+    match new_picpay_username{
+        Some(new_username)=>{
+            diesel::update(coffeezera_users.find(user_id)).set(picpay_username.eq(new_username))
+                .get_result::<CoffeezeraUser>(conn)
+                .expect(&format!("Could not find user with id {}", user_id));
+        },
+        None => {
+            diesel::update(coffeezera_users.find(user_id)).set(picpay_username.eq(None::<&str>))
+                .get_result::<CoffeezeraUser>(conn)
+                .expect(&format!("Could not find user with id {}", user_id));
+        }
+    }
+
 }
 
 pub fn get_user<'a>(conn: &PgConnection, input_telegram_id: i64) -> Result<CoffeezeraUser, diesel::result::Error> {

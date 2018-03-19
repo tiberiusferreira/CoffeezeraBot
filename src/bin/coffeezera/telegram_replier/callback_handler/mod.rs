@@ -3,12 +3,13 @@ extern crate teleborg;
 use self::teleborg::{CallBackQuery};
 use super::{CurrentUserContext, CoffeezeraUser};
 use coffeezera::telegram_replier::response::Response;
-use coffeezera::telegram_replier::grinder_action::GrinderAction;
+use super::TURN_OFF;
+use super::TURN_ON;
+use coffeezera::telegram_replier::update_impact::UpdateImpact;
 mod turn_on_handler;
 mod turn_off_handler;
 
-const TURN_OFF: &'static str  = "Desligar";
-const TURN_ON: &'static str  = "Ligar";
+
 const CALLBACK_NO_DATA: &'static str  = "Esse callback não tinha dados, envie essa mensagem para @TiberioFerreira.";
 
 pub struct CallbackHandler<'a>{
@@ -56,7 +57,7 @@ impl<'a> CallbackHandler <'a>{
                 return Response {
                     reply: CALLBACK_NO_DATA.to_string(),
                     reply_markup: None,
-                    action: GrinderAction::DoNothing,
+                    action: UpdateImpact::DoNothing,
                 };
             }
         };
@@ -70,7 +71,7 @@ impl<'a> CallbackHandler <'a>{
             return Response {
                 reply:  self.create_unknown_callback_data_response_text(&callback),
                 reply_markup: None,
-                action: GrinderAction::DoNothing,
+                action: UpdateImpact::DoNothing,
             };
         }
     }

@@ -7,6 +7,7 @@ mod grinder;
 use std::{thread};
 use self::telegram_replier::TelegramHandler;
 use self::teleborg::TelegramInterface;
+use self::coffeezerabot::models::CoffeezeraUser;
 use self::current_user_context::CurrentUserContext;
 use std;
 use std::time;
@@ -71,9 +72,9 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
     pub fn sync_to_db(&mut self){
         if let Some(ref mut context) = self.context {
             let beginning = time::Instant::now();
-            update_user(&self.telegram_handler.database_connection,
-                        context.current_user.id,
-                        context.current_user.account_balance);
+            update_user_balance(&self.telegram_handler.database_connection,
+                                context.current_user.id,
+                                context.current_user.account_balance);
             context.last_db_sync_time = time::Instant::now();
             if CurrentUserContext::elapse_as_f64_seconds(beginning)*1000.0 > 20.0{
                 warn!("Synced to DB, took {} ms", CurrentUserContext::elapse_as_f64_seconds(beginning)*1000.0);
@@ -91,6 +92,10 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         if needs_to_sync {
             self.sync_to_db();
         }
+    }
+
+    pub fn link_picpay_account_to_user(&self){
+
     }
 
 

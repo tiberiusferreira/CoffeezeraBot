@@ -33,7 +33,7 @@ impl<'a> CallbackHandler<'a> {
             return Response {
                 reply: reply_text,
                 reply_markup: Some(vec![vec![TURN_OFF.to_string()]]),
-                action: GrinderAction::DoNothing,
+                action: UpdateImpact::DoNothing,
             };
         }
         let reply_text;
@@ -45,7 +45,7 @@ impl<'a> CallbackHandler<'a> {
         Response {
             reply: reply_text,
             reply_markup: Some(vec![vec![TURN_ON.to_string()]]),
-            action: GrinderAction::TurnOff,
+            action: UpdateImpact::TurnOff,
         }
     }
 
@@ -59,7 +59,7 @@ impl<'a> CallbackHandler<'a> {
         Response {
             reply: reply_text,
             reply_markup: Some(vec![vec![TURN_ON.to_string()]]),
-            action: GrinderAction::DoNothing,
+            action: UpdateImpact::DoNothing,
         }
     }
 
@@ -75,7 +75,7 @@ impl<'a> CallbackHandler<'a> {
         Response {
             reply: reply_text,
             reply_markup: Some(vec![vec![TURN_ON.to_string()]]),
-            action: GrinderAction::DoNothing,
+            action: UpdateImpact::DoNothing,
         }
     }
 
@@ -89,7 +89,7 @@ impl<'a> CallbackHandler<'a> {
         Response {
             reply: reply_text,
             reply_markup: Some(vec![vec![TURN_ON.to_string()]]),
-            action: GrinderAction::DoNothing,
+            action: UpdateImpact::DoNothing,
         }
     }
 }

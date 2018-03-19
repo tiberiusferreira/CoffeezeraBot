@@ -6,13 +6,18 @@ use super::establish_connection;
 mod msg_handler;
 mod callback_handler;
 mod response;
-mod grinder_action;
-use self::grinder_action::GrinderAction;
+mod update_impact;
+use self::update_impact::UpdateImpact;
 use self::msg_handler::MessageHandler;
-use super::{get_user};
+use super::{get_user, update_user_picpay};
+
 use super::coffeezerabot::models::CoffeezeraUser;
 use self::teleborg::{Update, Message, CallBackQuery, TelegramInterface, OutgoingMessage, OutgoingEdit};
 use super::current_user_context::CurrentUserContext;
+
+const TURN_OFF: &'static str  = "Desligar";
+const TURN_ON: &'static str  = "Ligar";
+
 pub struct TelegramHandler<T> where T: TelegramInterface{
     pub telegram_interface: T,
     pub database_connection: PgConnection,
@@ -54,7 +59,16 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         });
         let chat_id = message.chat.id;
         let message_handler = MessageHandler::new(message, context, sender_db_info);
-        let response = message_handler.get_request_response();
+        let response = message_handler.get_response();
+        match response.action {
+            UpdateImpact::AddPicpayAccount {user, picpay_name} => {
+                update_user_picpay(&self.database_connection, user.id, Some(picpay_name));
+            },
+            UpdateImpact::RemovePicpayAccount {user} =>{
+                update_user_picpay(&self.database_connection, user.id, None);
+            },
+            _ => {}
+        }
         let mut message = OutgoingMessage::new(chat_id, &response.reply);
         if let Some(markup) = response.reply_markup {
             message.with_reply_markup(markup);
@@ -92,15 +106,15 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         let response = callback_handler::CallbackHandler::new(callback_query.clone(), context, sender_db_info.clone())
             .handle_callback();
         match response.action {
-            GrinderAction::DoNothing => {},
-            GrinderAction::TurnOn => {
+            UpdateImpact::TurnOn => {
                 if let Some(sender_db_info) = sender_db_info{
                     self.turn_on_grinder(context, sender_db_info, chat_id, message_id);
                 }else{
                     error!("Tried to allow non-registered user to access the grinder!!")
                 }
             },
-            GrinderAction::TurnOff => self.turn_off_grinder(context),
+            UpdateImpact::TurnOff => self.turn_off_grinder(context),
+            _ => {}
         }
         let mut message = OutgoingEdit::new(chat_id, message_id,&response.reply);
         if let Some(markup) = response.reply_markup {
