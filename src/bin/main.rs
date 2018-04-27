@@ -2,8 +2,9 @@ mod coffeezera;
 use coffeezera::CoffeezeraBot;
 extern crate teleborg;
 extern crate reqwest;
-#[macro_use]
-extern crate log;
+#[macro_use] extern crate log;
+#[macro_use] extern crate diesel_infer_schema;
+#[macro_use] extern crate diesel;
 extern crate flexi_logger;
 extern crate log_panics;
 use teleborg::Bot;

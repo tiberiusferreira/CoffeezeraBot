@@ -1,19 +1,18 @@
 extern crate teleborg;
 
-use self::teleborg::{CallBackQuery};
+use self::teleborg::*;
 use super::{CurrentUserContext, CoffeezeraUser};
 use coffeezera::telegram_replier::response::Response;
 use super::TURN_OFF;
 use super::TURN_ON;
-use coffeezera::telegram_replier::update_impact::UpdateImpact;
+use coffeezera::telegram_replier::update_outcome::UpdateImpact;
 mod turn_on_handler;
 mod turn_off_handler;
 
 
-const CALLBACK_NO_DATA: &'static str  = "Esse callback não tinha dados, envie essa mensagem para @TiberioFerreira.";
 
 pub struct CallbackHandler<'a>{
-    callback: CallBackQuery,
+    callback: CleanedCallbackQuery,
     context: &'a Option<CurrentUserContext>,
     sender_db_info: Option<CoffeezeraUser>
 }
@@ -24,7 +23,7 @@ impl<'a> CallbackHandler <'a>{
     fn create_unknown_callback_data_response_text(&self, unknown_data: &str) -> String {
         format!("Esse callback não tinha dados: {}, envie essa mensagem para @TiberioFerreira.", unknown_data)
     }
-    pub fn new(callback: CallBackQuery, context: &'a Option<CurrentUserContext>, sender_db_info: Option<CoffeezeraUser>) -> CallbackHandler<'a>{
+    pub fn new(callback: CleanedCallbackQuery, context: &'a Option<CurrentUserContext>, sender_db_info: Option<CoffeezeraUser>) -> CallbackHandler<'a>{
         CallbackHandler{
             callback,
             context,
@@ -50,18 +49,7 @@ impl<'a> CallbackHandler <'a>{
 
     pub fn handle_callback(&self) -> Response {
         info!("Handling the callback");
-        let callback = match self.callback.data {
-            Some(ref data) => data,
-            None => {
-                error!("Callback had no data");
-                return Response {
-                    reply: CALLBACK_NO_DATA.to_string(),
-                    reply_markup: None,
-                    action: UpdateImpact::DoNothing,
-                };
-            }
-        };
-
+        let callback = &self.callback.data;
         if self.is_turn_on_command(callback.as_str()) {
             return self.handle_turn_on_command();
         }   else if self.is_turn_off_command(callback.as_str()) {

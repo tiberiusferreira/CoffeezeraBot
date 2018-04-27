@@ -1,4 +1,4 @@
-use super::coffeezerabot::models::CoffeezeraUser;
+use super::database::models::CoffeezeraUser;
 use std::time;
 const AUTO_TURNOFF_TIME: f64 = 30.0;
 use coffeezera::IS_OPEN;

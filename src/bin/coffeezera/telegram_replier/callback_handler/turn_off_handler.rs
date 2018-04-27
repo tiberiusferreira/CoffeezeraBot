@@ -4,7 +4,7 @@ impl<'a> CallbackHandler<'a> {
     pub fn handle_turn_off_command(&self) -> Response {
         if let &Some(ref some_context) = self.context {
             info!("Turn off command with grinder in use");
-            if some_context.current_user.telegram_id == self.callback.from.id {
+            if some_context.current_user.telegram_id == self.callback.sender_id{
                 info!("Turn off command with grinder in use by the current user");
                 return self.get_response_for_turn_off_by_current_user(some_context);
             } else {

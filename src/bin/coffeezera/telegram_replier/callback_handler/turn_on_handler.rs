@@ -4,7 +4,7 @@ impl<'a> CallbackHandler<'a> {
     pub fn handle_turn_on_command(&self) -> Response {
         if let &Some(ref some_context) = self.context {
             info!("Turn on command with grinder in use");
-            if some_context.current_user.telegram_id == self.callback.from.id {
+            if some_context.current_user.telegram_id == self.callback.sender_id{
                 info!("Turn on command by same user already using it");
                 return self.get_response_for_turn_on_by_current_user(some_context);
             } else {
@@ -28,7 +28,7 @@ impl<'a> CallbackHandler<'a> {
 
     pub fn get_response_for_not_registered_user(&self) -> Response {
         info!("Updating msg with not registered msg");
-        let reply_text = format!("Você não está registrado para usar o moedor. Envie essa mensagem para @TiberioFerreira com o seu ID: {}", self.callback.from.id);
+        let reply_text = format!("Você não está registrado para usar o moedor. Envie essa mensagem para @TiberioFerreira com o seu ID: {}", self.callback.sender_id);
         Response {
             reply: reply_text,
             reply_markup: None,

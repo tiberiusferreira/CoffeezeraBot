@@ -6,13 +6,13 @@ use super::establish_connection;
 mod msg_handler;
 mod callback_handler;
 mod response;
-mod update_impact;
-use self::update_impact::UpdateImpact;
+mod update_outcome;
+use self::update_outcome::UpdateImpact;
 use self::msg_handler::MessageHandler;
-use super::{get_user, update_user_picpay};
+use super::{get_user};
 
-use super::coffeezerabot::models::CoffeezeraUser;
-use self::teleborg::{Update, Message, CallBackQuery, TelegramInterface, OutgoingMessage, OutgoingEdit};
+use super::database::models::CoffeezeraUser;
+use teleborg::*;
 use super::current_user_context::CurrentUserContext;
 
 const TURN_OFF: &'static str  = "Desligar";
@@ -38,37 +38,30 @@ impl <T: TelegramInterface> TelegramHandler<T> {
     }
 
 
+
+
+
     pub fn handle_update(&self, update: Update, context: &mut Option<CurrentUserContext>){
-        if let Some(message) = update.message {
-            info!("This was a message update");
-            self.handle_msg(message, context);
-            return;
+        match clean_update(update){
+            Ok(cleaned_update) => {
+                match cleaned_update {
+                    CleanedUpdate::CleanedMessage(cleaned_msg) => self.handle_msg(cleaned_msg, context),
+                    CleanedUpdate::CleanedCallbackQuery(cleaned_callback) => self.handle_callback(cleaned_callback, context)
+                };
+            },
+            Err(err) => {
+                error!("{}", err);
+            }
         }
-        if let Some(callback_query) = update.callback_query {
-            info!("This was a callback update");
-            self.handle_callback(callback_query, context);
-            return;
-        }
-        error!("This was neither a Message or Callback update. Weird.");
     }
 
 
-    fn handle_msg(&self, message: Message, context: &Option<CurrentUserContext>){
-        let sender_db_info = message.from.as_ref().and_then(|user| {
-            get_user(&self.database_connection, user.id).ok()
-        });
-        let chat_id = message.chat.id;
+    fn handle_msg(&self, message: CleanedMessage, context: &Option<CurrentUserContext>){
+        let sender_db_info = get_user(&self.database_connection, message.sender_id).ok();
+        let chat_id = message.chat_id;
         let message_handler = MessageHandler::new(message, context, sender_db_info);
         let response = message_handler.get_response();
-        match response.action {
-            UpdateImpact::AddPicpayAccount {user, picpay_name} => {
-                update_user_picpay(&self.database_connection, user.id, Some(picpay_name));
-            },
-            UpdateImpact::RemovePicpayAccount {user} =>{
-                update_user_picpay(&self.database_connection, user.id, None);
-            },
-            _ => {}
-        }
+
         let mut message = OutgoingMessage::new(chat_id, &response.reply);
         if let Some(markup) = response.reply_markup {
             message.with_reply_markup(markup);
@@ -87,36 +80,27 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         self.telegram_interface.edit_message_text(message);
     }
 
-    fn handle_callback(&self, callback_query: CallBackQuery, context: &mut Option<CurrentUserContext>){
-        let original_message = match callback_query.message {
-            Some(ref original_message) => {
-                original_message
-            },
-            None => {
-                error!("Did not have a message attached to Callback query");
-                return;
-            }
-        };
-        let chat_id = original_message.chat.id;
-        let message_id = original_message.message_id;
+    fn handle_callback(&self, callback_query: CleanedCallbackQuery, context: &mut Option<CurrentUserContext>){
+        let original_message_id = callback_query.original_msg_id;
+        let chat_id = callback_query.original_msg_chat_id;
 
-        let sender_db_info =
-            get_user(&self.database_connection, callback_query.from.id).ok();
+        let sender_db_info=
+            get_user(&self.database_connection, callback_query.sender_id).ok();
 
         let response = callback_handler::CallbackHandler::new(callback_query.clone(), context, sender_db_info.clone())
             .handle_callback();
         match response.action {
             UpdateImpact::TurnOn => {
                 if let Some(sender_db_info) = sender_db_info{
-                    self.turn_on_grinder(context, sender_db_info, chat_id, message_id);
+                    self.turn_on_grinder(context, sender_db_info, chat_id, original_message_id);
                 }else{
                     error!("Tried to allow non-registered user to access the grinder!!")
                 }
             },
             UpdateImpact::TurnOff => self.turn_off_grinder(context),
-            _ => {}
+            UpdateImpact::DoNothing => {}
         }
-        let mut message = OutgoingEdit::new(chat_id, message_id,&response.reply);
+        let mut message = OutgoingEdit::new(chat_id, original_message_id,&response.reply);
         if let Some(markup) = response.reply_markup {
             message.with_reply_markup(markup);
         };

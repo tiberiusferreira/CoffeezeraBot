@@ -19,3 +19,4 @@ log-panics = "*"
 [dependencies.teleborg]
 git = "https://github.com/tiberiusferreira/teleborg.git"
 branch = "fix_getting_updates"
+#path = "../teleborg"

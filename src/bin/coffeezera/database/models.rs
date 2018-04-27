@@ -6,7 +6,7 @@ pub struct CoffeezeraUser {
     pub name: String,
     pub telegram_id: i64,
     pub account_balance: f64,
-    pub picpay_username: Option<String>,
+    pub is_resident: bool,
 }
 
 use super::schema::coffeezera_users;
@@ -17,5 +17,5 @@ pub struct NewUser<'a> {
     pub name: &'a str,
     pub telegram_id: i64,
     pub account_balance: f64,
-    pub picpay_username: &'a str,
+    pub is_resident: bool,
 }

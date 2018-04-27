@@ -1,13 +1,13 @@
-extern crate coffeezerabot;
 extern crate teleborg;
-use self::coffeezerabot::*;
+mod database;
 mod current_user_context;
 mod telegram_replier;
 mod grinder;
+
+use self::database::*;
 use std::{thread};
 use self::telegram_replier::TelegramHandler;
 use self::teleborg::TelegramInterface;
-use self::coffeezerabot::models::CoffeezeraUser;
 use self::current_user_context::CurrentUserContext;
 use std;
 use std::time;
@@ -94,14 +94,10 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         }
     }
 
-    pub fn link_picpay_account_to_user(&self){
-
-    }
-
 
     pub fn start(&mut self){
         self.telegram_handler.telegram_interface.start_getting_updates();
-        loop{
+        loop {
             if let Ok(updates) = self.telegram_handler.telegram_interface.get_updates_channel().try_recv() {
                 for update in updates{
                     self.telegram_handler.handle_update(update, &mut self.context);
