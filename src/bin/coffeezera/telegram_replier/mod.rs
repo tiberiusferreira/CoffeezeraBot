@@ -46,7 +46,14 @@ impl <T: TelegramInterface> TelegramHandler<T> {
             Ok(cleaned_update) => {
                 match cleaned_update {
                     CleanedUpdate::CleanedMessage(cleaned_msg) => self.handle_msg(cleaned_msg, context),
-                    CleanedUpdate::CleanedCallbackQuery(cleaned_callback) => self.handle_callback(cleaned_callback, context)
+                    CleanedUpdate::CleanedCallbackQuery(cleaned_callback) => {
+                        self.telegram_interface.send_callback_answer(AnswerCallbackQuery{
+                            callback_query_id: cleaned_callback.callback_id.clone(),
+                            text: Some("Digitando...".to_string()),
+                            show_alert: None,
+                        });
+                        self.handle_callback(cleaned_callback, context)
+                    }
                 };
             },
             Err(err) => {
