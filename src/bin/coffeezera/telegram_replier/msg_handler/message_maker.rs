@@ -59,12 +59,13 @@ pub fn make_default_response(sender_db_info: &CoffeezeraUser) -> Response {
 
 
 pub fn make_no_credits_response(sender_db_info: &CoffeezeraUser) -> Response {
-    let credits = sender_db_info.account_balance;
     Response {
-        reply: format!("Você está sem créditos: {:.2} segundos, fale com @TiberioFerreira para adicionar mais.", credits),
+        reply: format!("Você está sem créditos. Recarrege automaticamente enviando um pagamento para @tiberio.ferreira no PicPay com SOMENTE seu apelido: \"{}\" sem aspas, no comentario do pagamento. Se você nao tem PicPay ainda ganhe reembolso na primeira recarga de R$10 ou mais no cartao usando o codigo CTNLRE ate 2h apos inscricao em Ajustes -> Usar codigo promocional", sender_db_info.name),
         action: UpdateImpact::DoNothing,
         reply_markup: None
     }
 }
+
+
 }
 

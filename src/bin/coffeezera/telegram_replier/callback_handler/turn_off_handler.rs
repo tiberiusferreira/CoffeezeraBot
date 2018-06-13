@@ -63,6 +63,18 @@ impl<'a> CallbackHandler<'a> {
         }
     }
 
+    pub fn get_response_for_no_credits_auto_turn_off_message(context: &CurrentUserContext) -> Response{
+        let reply_text = format!("Você está sem créditos. Recarrege automaticamente enviando um pagamento para @tiberio.ferreira no PicPay com SOMENTE seu apelido na forma exata: \"{}\" sem aspas no comentario do pagamento. Se você não tem PicPay ainda ganhe reembolso na primeira recarga de R$10 ou mais no cartao usando o codigo CTNLRE ate 2h após inscrição em Ajustes -> Usar codigo promocional", context.current_user.name);
+        Response {
+            reply: reply_text,
+            reply_markup: Some(vec![vec![TURN_ON.to_string()]]),
+            action: UpdateImpact::DoNothing,
+        }
+    }
+
+
+
+
     fn get_response_for_turn_off_by_not_current_user_but_a_registered_one(&self, context: &CurrentUserContext, sender_db_info: &CoffeezeraUser) -> Response{
         let reply_text;
         if IS_OPEN{

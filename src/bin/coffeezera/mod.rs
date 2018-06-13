@@ -52,7 +52,9 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
         if self.should_remove_user(){
             self.sync_to_db();
             if let Some(context) = self.context.as_ref(){
-                if context.get_time_left_turn_off() == 0.0{
+                if context.current_user.account_balance == 0.0{
+                    self.telegram_handler.send_no_credits_auto_turned_off_message(&context);
+                }else if context.get_time_left_turn_off() == 0.0{
                     self.telegram_handler.send_auto_turned_off_message(&context);
                 }
             }
@@ -108,7 +110,7 @@ impl <T: TelegramInterface> CoffeezeraBot<T>{
             self.remove_user_if_appropriate_and_sync_to_db_and_msg_him();
             self.update_grinder_state();
             if self.context.is_none(){
-                thread::sleep(std::time::Duration::from_millis(500));
+                thread::sleep(std::time::Duration::from_millis(200));
             }else {
                 thread::sleep(std::time::Duration::from_millis(1));
             }

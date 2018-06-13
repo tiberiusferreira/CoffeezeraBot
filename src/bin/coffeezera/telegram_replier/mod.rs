@@ -87,6 +87,17 @@ impl <T: TelegramInterface> TelegramHandler<T> {
         self.telegram_interface.edit_message_text(message);
     }
 
+    pub fn send_no_credits_auto_turned_off_message(&self, context: &CurrentUserContext){
+        let response = callback_handler::CallbackHandler::get_response_for_no_credits_auto_turn_off_message(context);
+        let mut message = OutgoingEdit::new(context.current_user_chat_id, context.current_user_message_id,&response.reply);
+        if let Some(markup) = response.reply_markup {
+            message.with_reply_markup(markup);
+        };
+        self.telegram_interface.edit_message_text(message);
+    }
+
+
+
     fn handle_callback(&self, callback_query: CleanedCallbackQuery, context: &mut Option<CurrentUserContext>){
         let original_message_id = callback_query.original_msg_id;
         let chat_id = callback_query.original_msg_chat_id;
