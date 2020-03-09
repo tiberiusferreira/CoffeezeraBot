@@ -1,6 +1,8 @@
 # CoffeezeraBot
 A Telegram bot which manages a coffee grinder.
 
+**Video of the project working:** https://photos.app.goo.gl/vcP8ovgUfEwVDuQQ9
+
 The user activates it using the Telegram Bot Coffeezera. 
 
 The bot allows the user to turn on the grinding (just turn on, not start grinding), turn off, and view its available credits.
@@ -15,6 +17,4 @@ https://easyeda.com/tiberiusferreira/Coffeezera-06a3484d75f944d485998dde287004a5
 
 Outputs either 0V when it is not grinding or 3.15V when it is. 
 
-Video of the project working:
 
-https://photos.app.goo.gl/vcP8ovgUfEwVDuQQ9
